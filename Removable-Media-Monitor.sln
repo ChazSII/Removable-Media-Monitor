@@ -1,11 +1,16 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.13
+VisualStudioVersion = 15.0.26430.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "Removable-Media-Monitor", "Removable-Media-Monitor\Removable-Media-Monitor.vbproj", "{5E83DFB1-605C-4B47-AE2C-6AF912CF0D8A}"
 EndProject
 Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "UnitTestProject", "UnitTestProject\UnitTestProject.vbproj", "{35A6B9F5-5A3A-4C4C-AF1C-3E2F49D88409}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{2206EDDE-4918-4681-994E-4A885878599E}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

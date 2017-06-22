@@ -9,27 +9,17 @@ Monitors the attachment and removal of removable devices.
 
 ## Installation
 
-TODO: Describe the installation process
+[Nuget Package](https://www.nuget.org/packages/Removable-Media-Monitor)
 
 ## Usage
 
 TODO: Write usage instructions
 
-## Contributing
-
-1. Fork it!
-2. Create your feature branch: `git checkout -b my-new-feature`
-3. Commit your changes: `git commit -am 'Add some feature'`
-4. Push to the branch: `git push origin my-new-feature`
-5. Submit a pull request :D
-
-## History
-
-TODO: Write history
 
 ## Credits
 
-TODO: Write credits
+* Inspiration: [Detect USB Removal in C#](http://www.codeproject.com/Articles/18062/)
+* Iconset:  [alecive - Flatwoken Icons - CC Attribution-Share Alike 4.0](https://github.com/alecive/FlatWoken/blob/master/FlatWoken/scalable/apps/drive-removable-media.svg)
 
 ## License
 

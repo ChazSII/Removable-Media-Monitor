@@ -89,7 +89,6 @@
     <Compile Include="Mocking\NativeMethods.vb" />
     <Compile Include="Mocking\NativeStructs.vb" />
     <Compile Include="WndProcEvents_UnitTest.vb" />
-    <Compile Include="Mocking\VhdApi.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
     <Compile Include="My Project\Application.Designer.vb">
       <AutoGen>True</AutoGen>
