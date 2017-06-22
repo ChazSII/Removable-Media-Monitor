@@ -1,126 +1,7 @@
-﻿''==================================================================''
-''                                                                  ''
-''      Copied and modified from Jan Dolinay's Drive Detector       ''
-''          - http://www.codeproject.com/Articles/18062/            ''
-''                                                                  ''
-''  Translated from C# to VB via Snippet Converter and manually     ''
-''  - http://codeconverter.sharpdevelop.net/SnippetConverter.aspx   ''
-''                                                                  ''
-''==================================================================''
-Imports System.Collections.Generic
-Imports System.Text
-Imports System.Windows.Forms ' required for Message
-Imports System.Runtime.InteropServices ' required for Marshal
-Imports System.IO
+﻿Imports System.IO
+Imports System.Runtime.InteropServices
+Imports System.Windows.Forms
 Imports Microsoft.Win32.SafeHandles
-' DriveDetector - rev. 1, Oct. 31 2007
-
-''' <summary>
-''' Hidden Form which we use to receive Windows messages about flash drives
-''' </summary>
-Friend Class DetectorForm
-    Inherits Form
-    Private label1 As Label
-    Private mDetector As DriveDetector = Nothing
-
-    ''' <summary>
-    ''' Set up the hidden form. 
-    ''' </summary>
-    ''' <param name="detector">DriveDetector object which will receive notification about USB drives, see WndProc</param>
-    Public Sub New(detector As DriveDetector)
-        mDetector = detector
-        Me.MinimizeBox = False
-        Me.MaximizeBox = False
-        Me.ShowInTaskbar = False
-        Me.ShowIcon = False
-        Me.FormBorderStyle = FormBorderStyle.None
-        AddHandler Me.Load, New System.EventHandler(AddressOf Me.Load_Form)
-        AddHandler Me.Activated, New EventHandler(AddressOf Me.Form_Activated)
-    End Sub
-
-    Private Sub Load_Form(sender As Object, e As EventArgs)
-        ' We don't really need this, just to display the label in designer ...
-        InitializeComponent()
-
-        ' Create really small form, invisible anyway.
-        Me.Size = New System.Drawing.Size(5, 5)
-    End Sub
-
-    Private Sub Form_Activated(sender As Object, e As EventArgs)
-        Me.Visible = False
-    End Sub
-
-    ''' <summary>
-    ''' This function receives all the windows messages for this window (form).
-    ''' We call the DriveDetector from here so that is can pick up the messages about
-    ''' drives arrived and removed.
-    ''' </summary>
-    Protected Overrides Sub WndProc(ByRef m As Message)
-        MyBase.WndProc(m)
-
-        If mDetector IsNot Nothing Then
-            mDetector.WndProc(m)
-        End If
-    End Sub
-
-    Private Sub InitializeComponent()
-        Me.label1 = New System.Windows.Forms.Label()
-        Me.SuspendLayout()
-        ' 
-        ' label1
-        ' 
-        Me.label1.AutoSize = True
-        Me.label1.Location = New System.Drawing.Point(13, 30)
-        Me.label1.Name = "label1"
-        Me.label1.Size = New System.Drawing.Size(314, 13)
-        Me.label1.TabIndex = 0
-        Me.label1.Text = "This is invisible form. To see DriveDetector code click View Code"
-        ' 
-        ' DetectorForm
-        ' 
-        Me.ClientSize = New System.Drawing.Size(360, 80)
-        Me.Controls.Add(Me.label1)
-        Me.Name = "DetectorForm"
-        Me.ResumeLayout(False)
-        Me.PerformLayout()
-
-    End Sub
-End Class
-
-' Delegate for event handler to handle the device events 
-Public Delegate Sub DriveDetectorEventHandler(sender As [Object], e As DriveDetectorEventArgs)
-
-''' <summary>
-''' Our class for passing in custom arguments to our event handlers 
-''' </summary>
-Public Class DriveDetectorEventArgs
-    Inherits EventArgs
-
-    Public Sub New()
-        Cancel = False
-        Drive = ""
-        HookQueryRemove = False
-    End Sub
-
-    ''' <summary>
-    ''' Get/Set the value indicating that the event should be cancelled 
-    ''' Only in QueryRemove handler.
-    ''' </summary>
-    Public Cancel As Boolean
-
-    ''' <summary>
-    ''' Drive letter for the device which caused this event 
-    ''' </summary>
-    Public Drive As String
-
-    ''' <summary>
-    ''' Set to true in your DeviceArrived event handler if you wish to receive the 
-    ''' QueryRemove event for this drive. 
-    ''' </summary>
-    Public HookQueryRemove As Boolean
-
-End Class
-
 
 ''' <summary>
 ''' Detects insertion or removal of removable drives.
@@ -142,6 +23,42 @@ Public Class DriveDetector
     Public Event DeviceArrived As DriveDetectorEventHandler
     Public Event DeviceRemoved As DriveDetectorEventHandler
     Public Event QueryRemove As DriveDetectorEventHandler
+
+
+    ''' <summary>
+    ''' Gets the value indicating whether the query remove event will be fired.
+    ''' </summary>
+    Public ReadOnly Property IsQueryHooked() As Boolean
+        Get
+            If mDeviceNotifyHandle = IntPtr.Zero Then
+                Return False
+            Else
+                Return True
+            End If
+        End Get
+    End Property
+
+    ''' <summary>
+    ''' Gets letter of drive which is currently hooked. Empty string if none.
+    ''' See also IsQueryHooked.
+    ''' </summary>
+    Public ReadOnly Property HookedDrive() As String
+        Get
+            Return mCurrentDrive
+        End Get
+    End Property
+
+    ''' <summary>
+    ''' Gets the file stream for file which this class opened on a drive to be notified
+    ''' about it's removal. 
+    ''' This will be null unless you specified a file to open (DriveDetector opens root directory of the flash drive) 
+    ''' </summary>
+    Public ReadOnly Property OpenedFile() As FileStream
+        Get
+            Return mFileOnFlash
+        End Get
+    End Property
+
 
     ''' <summary>
     ''' The easiest way to use DriveDetector. 
@@ -179,6 +96,7 @@ Public Class DriveDetector
         Init(control, FileToOpen)
     End Sub
 
+
     ''' <summary>
     ''' init the DriveDetector object
     ''' </summary>
@@ -193,40 +111,6 @@ Public Class DriveDetector
     End Sub
 
     ''' <summary>
-    ''' Gets the value indicating whether the query remove event will be fired.
-    ''' </summary>
-    Public ReadOnly Property IsQueryHooked() As Boolean
-        Get
-            If mDeviceNotifyHandle = IntPtr.Zero Then
-                Return False
-            Else
-                Return True
-            End If
-        End Get
-    End Property
-
-    ''' <summary>
-    ''' Gets letter of drive which is currently hooked. Empty string if none.
-    ''' See also IsQueryHooked.
-    ''' </summary>
-    Public ReadOnly Property HookedDrive() As String
-        Get
-            Return mCurrentDrive
-        End Get
-    End Property
-
-    ''' <summary>
-    ''' Gets the file stream for file which this class opened on a drive to be notified
-    ''' about it's removal. 
-    ''' This will be null unless you specified a file to open (DriveDetector opens root directory of the flash drive) 
-    ''' </summary>
-    Public ReadOnly Property OpenedFile() As FileStream
-        Get
-            Return mFileOnFlash
-        End Get
-    End Property
-
-    ''' <summary>
     ''' Hooks specified drive to receive a message when it is being removed.  
     ''' This can be achieved also by setting e.HookQueryRemove to true in your 
     ''' DeviceArrived event handler. 
@@ -235,17 +119,18 @@ Public Class DriveDetector
     ''' </summary>
     ''' <param name="fileOnDrive">Drive letter or relative path to a file on the drive which should be 
     ''' used to get a handle - required for registering to receive query remove messages.
-    ''' If only drive letter is specified (e.g. "D:\\", root directory of the drive will be opened.</param>
+    ''' If only drive letter is specified (e.g. "D:\", root directory of the drive will be opened.</param>
     ''' <returns>true if hooked ok, false otherwise</returns>
     Public Function EnableQueryRemove(fileOnDrive As String) As Boolean
         If fileOnDrive Is Nothing OrElse fileOnDrive.Length = 0 Then
             Throw New ArgumentException("Drive path must be supplied to register for Query remove.")
         End If
 
-        If fileOnDrive.Length = 2 AndAlso fileOnDrive(1) = ":"c Then
-            fileOnDrive += "\"c
+        If fileOnDrive.Length = 2 AndAlso fileOnDrive(1) = ":" Then
+            ' append "\" if only drive letter with ":" was passed in.
+            fileOnDrive += "\"
         End If
-        ' append "\\" if only drive letter with ":" was passed in.
+
         If mDeviceNotifyHandle <> IntPtr.Zero Then
             ' Unregister first...
             RegisterForDeviceChange(False, Nothing)
@@ -259,9 +144,11 @@ Public Class DriveDetector
         End If
 
         RegisterQuery(Path.GetPathRoot(fileOnDrive))
+
         If mDeviceNotifyHandle = IntPtr.Zero Then
             Return False
         End If
+
         ' failed to register
         Return True
     End Function
@@ -284,18 +171,17 @@ Public Class DriveDetector
     ''' </summary>
     ''' <param name="m"></param>
     Public Sub WndProc(ByRef m As Message)
-        Dim devType As Integer
         Dim driveLetter As Char
 
         If m.Msg = WM_DEVICECHANGE Then
             ' WM_DEVICECHANGE can have several meanings depending on the WParam value...
 
+            Dim devType As Integer = Marshal.ReadInt32(m.LParam, 4)
+
             Select Case m.WParam.ToInt32()
                 ' New device has just arrived
-                Case DBT_DEVICEARRIVAL
-                    devType = Marshal.ReadInt32(m.LParam, 4)
-
-                    If devType = DBT_DEVTYP_VOLUME Then
+                Case DeviceEvent.DEVICEARRIVAL
+                    If devType = DeviceTypes.VOLUME Then
                         Dim vol As DEV_BROADCAST_VOLUME = CType(Marshal.PtrToStructure(m.LParam, GetType(DEV_BROADCAST_VOLUME)), DEV_BROADCAST_VOLUME)
 
                         ' Get the drive letter 
@@ -315,12 +201,11 @@ Public Class DriveDetector
                             RegisterQuery(driveLetter & ":\")
                         End If
                     End If
-                Case DBT_DEVICEQUERYREMOVE
+                Case DeviceEvent.DEVICEQUERYREMOVE
                     ' Device is about to be removed
                     ' Any application can cancel the removal
 
-                    devType = Marshal.ReadInt32(m.LParam, 4)
-                    If devType = DBT_DEVTYP_HANDLE Then
+                    If devType = DeviceTypes.HANDLE Then
                         ' TODO: we could get the handle for which this message is sent 
                         ' from vol.dbch_handle and compare it against a list of handles for 
                         ' which we have registered the query remove message (?)                                                 
@@ -348,12 +233,11 @@ Public Class DriveDetector
 
                         End If
                     End If
-                Case DBT_DEVICEREMOVECOMPLETE
+                Case DeviceEvent.DEVICEREMOVECOMPLETE
                     ' Device has been removed
 
-                    devType = Marshal.ReadInt32(m.LParam, 4)
-                    If devType = DBT_DEVTYP_VOLUME Then
-                        Dim vol As DEV_BROADCAST_VOLUME = CType(Marshal.PtrToStructure(m.LParam, GetType(DEV_BROADCAST_VOLUME)), DEV_BROADCAST_VOLUME)
+                    If devType = DeviceTypes.VOLUME Then
+                        Dim vol As DEV_BROADCAST_VOLUME = Marshal.PtrToStructure(m.LParam, GetType(DEV_BROADCAST_VOLUME))
                         driveLetter = DriveMaskToLetter(vol.dbcv_unitmask)
 
                         ' Call the client event handler
@@ -372,6 +256,10 @@ Public Class DriveDetector
 
 
 #Region "Private Area"
+
+    ' Win32 constants
+    Private Const BROADCAST_QUERY_DENY As Integer = &H424D5144
+    Private Const WM_DEVICECHANGE As Integer = &H219
 
     ''' <summary>
     ''' New: 28.10.2007 - handle to root directory of flash drive which is opened
@@ -405,19 +293,6 @@ Public Class DriveDetector
     Private mCurrentDrive As String
 
 
-    ' Win32 constants
-    Private Const DBT_DEVTYP_DEVICEINTERFACE As Integer = 5
-    Private Const DBT_DEVTYP_HANDLE As Integer = 6
-    Private Const BROADCAST_QUERY_DENY As Integer = &H424D5144
-    Private Const WM_DEVICECHANGE As Integer = &H219
-    Private Const DBT_DEVICEARRIVAL As Integer = &H8000
-    ' system detected a new device
-    Private Const DBT_DEVICEQUERYREMOVE As Integer = &H8001
-    ' Preparing to remove (any program can disable the removal)
-    Private Const DBT_DEVICEREMOVECOMPLETE As Integer = &H8004
-    ' removed 
-    Private Const DBT_DEVTYP_VOLUME As Integer = &H2
-    ' drive type is logical volume
     ''' <summary>
     ''' Registers for receiving the query remove message for a given drive.
     ''' We need to open a handle on that drive and register with this handle. 
@@ -480,12 +355,11 @@ Public Class DriveDetector
 
     End Sub
 
-
     ''' <summary>
     ''' New version which gets the handle automatically for specified directory
     ''' Only for registering! Unregister with the old version of this function...
     ''' </summary>
-    ''' <param name="dirPath">e.g. C:\\dir</param>
+    ''' <param name="dirPath">e.g. C:\dir</param>
     Private Sub RegisterForDeviceChange(dirPath As String)
         Dim handle As IntPtr = NativeMethods.OpenDirectory(dirPath)
         If handle = IntPtr.Zero Then
@@ -497,7 +371,7 @@ Public Class DriveDetector
         ' save handle for closing it when unregistering
         ' Register for handle
         Dim data As New DEV_BROADCAST_HANDLE()
-        data.dbch_devicetype = DBT_DEVTYP_HANDLE
+        data.dbch_devicetype = DeviceTypes.HANDLE
         data.dbch_reserved = 0
         data.dbch_nameoffset = 0
         'data.dbch_data = null;
@@ -523,7 +397,7 @@ Public Class DriveDetector
         If register Then
             ' Register for handle
             Dim data As New DEV_BROADCAST_HANDLE()
-            data.dbch_devicetype = DBT_DEVTYP_HANDLE
+            data.dbch_devicetype = DeviceTypes.HANDLE
             data.dbch_reserved = 0
             data.dbch_nameoffset = 0
             'data.dbch_data = null;
@@ -579,7 +453,7 @@ Public Class DriveDetector
         Dim pom As Integer = mask \ 2
         While pom <> 0
             ' while there is any bit set in the mask
-            ' shift it to the righ...                
+            ' shift it to the right...                
             pom = pom \ 2
             cnt += 1
         End While
@@ -587,7 +461,7 @@ Public Class DriveDetector
         If cnt < drives.Length Then
             letter = drives(cnt)
         Else
-            letter = "?"c
+            letter = "?"
         End If
 
         Return letter
@@ -620,16 +494,17 @@ Public Class DriveDetector
 #End Region
 
 #Region "Native Win32 API"
+
     ''' <summary>
     ''' WinAPI functions
     ''' </summary>        
     Private Class NativeMethods
         '   HDEVNOTIFY RegisterDeviceNotification(HANDLE hRecipient,LPVOID NotificationFilter,DWORD Flags);
-        <DllImport("user32.dll", CharSet:=CharSet.Auto)> _
+        <DllImport("user32.dll", CharSet:=CharSet.Auto)>
         Public Shared Function RegisterDeviceNotification(hRecipient As IntPtr, NotificationFilter As IntPtr, Flags As UInteger) As IntPtr
         End Function
 
-        <DllImport("user32.dll", CharSet:=CharSet.Auto)> _
+        <DllImport("user32.dll", CharSet:=CharSet.Auto)>
         Public Shared Function UnregisterDeviceNotification(hHandle As IntPtr) As UInteger
         End Function
 
@@ -655,7 +530,7 @@ Public Class DriveDetector
         End Function
 
 
-        <DllImport("kernel32", SetLastError:=True)> _
+        <DllImport("kernel32", SetLastError:=True)>
         Private Shared Function CloseHandle(hObject As IntPtr) As Boolean
             ' handle to object
         End Function
@@ -663,11 +538,11 @@ Public Class DriveDetector
         ''' <summary>
         ''' Opens a directory, returns it's handle or zero.
         ''' </summary>
-        ''' <param name="dirPath">path to the directory, e.g. "C:\\dir"</param>
+        ''' <param name="dirPath">path to the directory, e.g. "C:\dir"</param>
         ''' <returns>handle to the directory. Close it with CloseHandle().</returns>
         Public Shared Function OpenDirectory(dirPath As String) As IntPtr
             ' open the existing file for reading          
-            Dim handle As IntPtr = CreateFile(dirPath, FileAccess.Read, FILE_SHARE_READ Or FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS Or FILE_ATTRIBUTE_NORMAL, _
+            Dim handle As IntPtr = CreateFile(dirPath, FileAccess.Read, FILE_SHARE_READ Or FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS Or FILE_ATTRIBUTE_NORMAL,
                 0)
 
             If handle = INVALID_HANDLE_VALUE Then
@@ -683,9 +558,8 @@ Public Class DriveDetector
         End Function
     End Class
 
-
     ' Structure with information for RegisterDeviceNotification.
-    <StructLayout(LayoutKind.Sequential)> _
+    <StructLayout(LayoutKind.Sequential)>
     Friend Structure DEV_BROADCAST_HANDLE
         Friend dbch_size As Integer
         Friend dbch_devicetype As Integer
@@ -700,15 +574,15 @@ Public Class DriveDetector
     End Structure
 
     ' Struct for parameters of the WM_DEVICECHANGE message
-    <StructLayout(LayoutKind.Sequential)> _
+    <StructLayout(LayoutKind.Sequential)>
     Friend Structure DEV_BROADCAST_VOLUME
         Friend dbcv_size As Integer
         Friend dbcv_devicetype As Integer
         Friend dbcv_reserved As Integer
         Friend dbcv_unitmask As Integer
     End Structure
-#End Region
 
+#End Region
 
 
 #Region "IDisposable Support"
